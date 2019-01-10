@@ -1,11 +1,11 @@
 ## AgensGraph Docker    
 
 # Tag Info   
-* **v1.3.0**, **latest** : AgensGraph v1.3.0 / debian
+* **v1.3.1**, **latest** : AgensGraph v1.3.1 / ubuntu
 
 # Usage (docker)    
 * Image download       
-$ docker pull bitnine/agensgraph:v1.3.0       
+$ docker pull bitnine/agensgraph:v1.3.1       
 
 * Create Volume
 $ docker volume create --name myvolume
@@ -13,11 +13,11 @@ $ docker volume create --name myvolume
 * Container starting           
     - agens 
       (Temporary mode)
-      $ docker run -it bitnine/agensgraph:v1.3.0 agens
+      $ docker run -it bitnine/agensgraph:v1.3.1 agens
       (Save mode) 
-      $ docker run -i -t -v myvolume:/home/agens/AgensGraph/data bitnine/agensgraph:v1.3.0 agens
+      $ docker run -i -t -v myvolume:/home/agens/AgensGraph/data bitnine/agensgraph:v1.3.1 agens
     - bash 
-      $ docker run -it bitnine/agensgraph:v1.3.0 /bin/bash
+      $ docker run -it bitnine/agensgraph:v1.3.1 /bin/bash
 
 # Usage (AgensGraph)     
 The image already has a graph("agens_graph"), and you can see the list of graphs created with the `\dG` command.

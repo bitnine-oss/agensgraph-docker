@@ -1,0 +1,1 @@
+java -jar agens-browser-web-1.0.jar --spring.config.name=agens-browser.config

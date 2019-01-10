@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e 
+set -e
 
 # starting the server
 ag_ctl start
