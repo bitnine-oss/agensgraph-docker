@@ -26,13 +26,11 @@ RUN set -e
 RUN initdb
 
 RUN sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/g" $AGDATA/postgresql.conf
-RUN echo "host  all     all     0.0.0.0/0       trust" >> $AGDATA/pg_hba.conf
+RUN echo "host	all	all	0.0.0.0/0	trust" >> $AGDATA/pg_hba.conf
 
 RUN ag_ctl start; sleep 5;\
     createdb;\
-    sleep 1;\
-    agens -q -f /home/agens/scripts/northwind_rdb1_import.sql;\
-    agens -q -f /home/agens/scripts/northwind_rdb2_to_gdb.sql;\
+    agens -c "create graph agens_graph";\
     ag_ctl stop
 
 ENTRYPOINT ["/home/agens/scripts/entrypoint.sh"]
