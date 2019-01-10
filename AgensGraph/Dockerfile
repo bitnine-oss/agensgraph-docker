@@ -1,7 +1,9 @@
-FROM ubuntu:16.04
+FROM centos:7
 
-RUN apt-get update && \
-    apt-get -y install build-essential libreadline-dev zlib1g-dev flex bison libkeyutils-dev libnss3 default-jre vim
+RUN yum install -y gcc glibc glib-common readline readline-devel zlib zlib-devel
+
+#RUN apt-get update && \
+#apt-get install -y build-essential libreadline-dev zlib1g-dev flex bison libxml2 openssl
 
 RUN useradd -m -c "AgensGraph User" -U agens -p agens
 
@@ -14,7 +16,7 @@ ENV AGDATA=/home/agens/AgensGraph/data \
     LD_LIBRARY_PATH=/home/agens/AgensGraph/lib:$LD_LIBRARY_PATH \
     AGHOME=/home/agens/AgensGraph
 
-ADD AgensGraph-v1.3.1_linux.tar.gz /home/agens
+ADD AgensGraph_v1.3.2_linux.tar.gz /home/agens
 
 RUN mkdir -p /home/agens/scripts
 ADD entrypoint.sh /home/agens/scripts
