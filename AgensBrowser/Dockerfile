@@ -12,7 +12,7 @@ ENV AGDATA=/home/agens/AgensGraph/data \
     LD_LIBRARY_PATH=/home/agens/AgensGraph/lib:$LD_LIBRARY_PATH \
     AGHOME=/home/agens
 
-ADD AgensGraph_v1.3.2_linux.tar.gz /home/agens
+ADD AgensGraph_v2.0.0_linux_CE.tar.gz /home/agens
 
 RUN mkdir -p /home/agens/scripts
 RUN mkdir -p /home/agens/AgensBrowser

@@ -1,9 +1,6 @@
 FROM centos:7
 
-RUN yum install -y gcc glibc glib-common readline readline-devel zlib zlib-devel
-
-#RUN apt-get update && \
-#apt-get install -y build-essential libreadline-dev zlib1g-dev flex bison libxml2 openssl
+RUN yum install -y gcc glibc glib-common readline readline-devel zlib zlib-devel flex bison vim java-1.8.0-openjdk net-tools
 
 RUN useradd -m -c "AgensGraph User" -U agens -p agens
 
@@ -16,7 +13,7 @@ ENV AGDATA=/home/agens/AgensGraph/data \
     LD_LIBRARY_PATH=/home/agens/AgensGraph/lib:$LD_LIBRARY_PATH \
     AGHOME=/home/agens/AgensGraph
 
-ADD AgensGraph_v1.3.2_linux.tar.gz /home/agens
+ADD AgensGraph_v2.0.0_linux_CE.tar.gz /home/agens
 
 RUN mkdir -p /home/agens/scripts
 ADD entrypoint.sh /home/agens/scripts
@@ -25,11 +22,17 @@ RUN chmod +x /home/agens/scripts/entrypoint.sh
 USER agens
 EXPOSE 5432
 
-RUN set -e;\
-    initdb;\
-	ag_ctl start; sleep 5;\
-	createdb;\
-	agens -c "create graph agens_graph";\
+RUN set -e
+RUN initdb
+
+RUN sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/g" $AGDATA/postgresql.conf
+RUN echo "host  all     all     0.0.0.0/0       trust" >> $AGDATA/pg_hba.conf
+
+RUN ag_ctl start; sleep 5;\
+    createdb;\
+    sleep 1;\
+    agens -q -f /home/agens/scripts/northwind_rdb1_import.sql;\
+    agens -q -f /home/agens/scripts/northwind_rdb2_to_gdb.sql;\
     ag_ctl stop
 
 ENTRYPOINT ["/home/agens/scripts/entrypoint.sh"]
