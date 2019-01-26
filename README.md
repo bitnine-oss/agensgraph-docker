@@ -5,11 +5,12 @@ This fork runs AgensGraph in the foreground so it can be used with `docker-compo
 
 ```Dockerfile
 # db/Dockerfile
-FROM wenkepaul/agensgraph
+FROM wenkepaul/agensgraph:2.1.0
 ... Create your schema, seeding, etc.
 ```
 
 ```docker-compose.yml
+# docker-compose.yml
 version: '3.7'
 services:
   db:
