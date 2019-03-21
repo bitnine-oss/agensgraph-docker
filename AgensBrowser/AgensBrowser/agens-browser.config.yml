@@ -1,0 +1,39 @@
+## config context path to "/" by setting an empty string
+server:
+  port: 8085
+
+logging:
+  config: classpath:logback-agens.xml
+
+spring:
+  pid:
+    file: agensbrowser.pid
+  main:
+    banner-mode: "off"
+
+agens:
+  product:
+    name: AgensBrowser-web
+    version: 1.0
+    hello_msg: AgensBrowser web v1.0 (since 2018-02-01)
+  config:
+    base_path: /api
+    query_timeout: 600000   # 1000 ms = 1 sec
+  inner:
+    datasource:
+      driverClassName: org.h2.Driver
+      url: jdbc:h2:file:./agens-h2;DB_CLOSE_DELAY=-1;MODE=MySQL
+      username: sa
+      password:
+  outer:
+    datasource:
+      driverClassName: org.postgresql.Driver
+      url: jdbc:postgresql://127.0.0.1:5432/agens?ApplicationName=AgensBrowser
+      graph_path: northwind_graph
+      username: agens
+      password: agens
+      max_rows: 1000
+  jwt:
+    header: Authorization     # not used
+    secret: agensBrowserKey
+    expiration: 43200         # unit: sec (12 Hour = 43200 sec)
