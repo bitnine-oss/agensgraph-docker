@@ -35,6 +35,8 @@ RUN echo "host	all	all	0.0.0.0/0	trust" >> $AGDATA/pg_hba.conf
 RUN ag_ctl start; sleep 5;\
     createdb;\
     agens -c "create graph agens_graph";\
+    agens -q -f /home/agens/scripts/northwind_rdb1_import.sql;\
+    agens -q -f /home/agens/scripts/northwind_rdb2_to_gdb.sql;\
     ag_ctl stop
 
 ENTRYPOINT ["/home/agens/scripts/entrypoint.sh"]
