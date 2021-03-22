@@ -1,7 +1,7 @@
 ## Tag Info
 
 * **v2.1.3 ( latest )** : alpine:3.13
-* **v2.1.1 ** : CentOS 7 / Java 8
+* **v2.1.1** : CentOS 7 / Java 8
 * **v2.1.0** : CentOS 7 / Java 8
 * **v2.0.0** : CentOS 7 / Java 8
 * **v1.3.2** : CentOS 7 / Java 8
