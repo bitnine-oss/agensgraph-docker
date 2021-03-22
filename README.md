@@ -44,10 +44,7 @@ The image already has a graph("agens_graph"), and you can see the list of graphs
 
 ```shell
 $ docker exec -it {NAME OR CONTAINER_ID} /bin/bash
-bash-5.1# psql
-psql: FATAL:  role "root" does not exist
-bash-5.1# su - postgres
-7ae96ba6af71:~$ psql
+bash-5.1# psql -u postgres
 psql (10.4)
 Type "help" for help.
 
