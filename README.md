@@ -76,6 +76,6 @@ postgres=# MATCH (n) RETURN n;
 
 
 # Reference
-* AgensGraph Quick Guide : http://bitnine.net/wp-content/uploads/2017/06/html5/1.3-quick-guide.html
+* AgensGraph Quick Guide : https://bitnine.net/documentations/manual/agens_graph_quick_guide.html
 * Dockerfile repository : https://github.com/bitnine-oss/agensgraph-docker.git
 
