@@ -1,17 +1,13 @@
 # vim:set ft=dockerfile:
 FROM alpine:3.13
 
-# alpine includes "postgres" user/group in base install
-#   /etc/passwd:22:postgres:x:70:70::/var/lib/postgresql:/bin/sh
-#   /etc/group:34:postgres:x:70:
-# the home directory for the postgres user, however, is not created by default
-# see https://github.com/docker-library/postgres/issues/274
-RUN set -ex; \
-	postgresHome="$(getent passwd postgres)"; \
-	postgresHome="$(echo "$postgresHome" | cut -d: -f6)"; \
-	[ "$postgresHome" = '/var/lib/postgresql' ]; \
-	mkdir -p "$postgresHome"; \
-	chown -R postgres:postgres "$postgresHome"
+# 70 is the standard uid/gid for "postgres" in Alpine
+# https://git.alpinelinux.org/aports/tree/main/postgresql/postgresql.pre-install?h=3.12-stable
+RUN set -eux; \
+	addgroup -g 70 -S postgres; \
+	adduser -u 70 -S -D -G postgres -H -h /var/lib/postgresql -s /bin/sh postgres; \
+	mkdir -p /var/lib/postgresql; \
+	chown -R postgres:postgres /var/lib/postgresql
 
 # su-exec (gosu-compatible) is installed further down
 
@@ -25,24 +21,20 @@ ENV PG_MAJOR 10
 ENV AG_VERSION v2.1.3
 ENV AG_SHA256 bb1e60b21e888e560232ecc48235b74056684747172c9e0b3457f968986ed591
 
-RUN set -ex \
+RUN set -eux; \
 	\
-	&& apk add --no-cache --virtual .fetch-deps \
-		ca-certificates \
-		openssl \
-		tar \
-	\
-	&& wget -O postgresql.tar.gz "https://github.com/bitnine-oss/agensgraph/archive/$AG_VERSION.tar.gz" \
-	&& echo "$AG_SHA256 *postgresql.tar.gz" | sha256sum -c - \	
-	&& mkdir -p /usr/src/postgresql \
-	&& tar \
+	wget -O postgresql.tar.gz "https://github.com/bitnine-oss/agensgraph/archive/$AG_VERSION.tar.gz"; \
+	echo "$AG_SHA256 *postgresql.tar.gz" | sha256sum -c -; \
+	mkdir -p /usr/src/postgresql; \
+	tar \
 		--extract \
 		--file postgresql.tar.gz \
 		--directory /usr/src/postgresql \
 		--strip-components 1 \
-	&& rm postgresql.tar.gz \
+	; \
+	rm postgresql.tar.gz; \
 	\
-	&& apk add --no-cache --virtual .build-deps \
+	apk add --no-cache --virtual .build-deps \
 		bison \
 		coreutils \
 		dpkg-dev dpkg \
@@ -68,20 +60,21 @@ RUN set -ex \
 		util-linux-dev \
 		zlib-dev \
 		icu-dev \
+	; \
 	\
-	&& cd /usr/src/postgresql \
+	cd /usr/src/postgresql; \
 # update "DEFAULT_PGSOCKET_DIR" to "/var/run/postgresql" (matching Debian)
 # see https://anonscm.debian.org/git/pkg-postgresql/postgresql.git/tree/debian/patches/51-default-sockets-in-var.patch?id=8b539fcb3e093a521c095e70bdfa76887217b89f
-	&& awk '$1 == "#define" && $2 == "DEFAULT_PGSOCKET_DIR" && $3 == "\"/tmp\"" { $3 = "\"/var/run/postgresql\""; print; next } { print }' src/include/pg_config_manual.h > src/include/pg_config_manual.h.new \
-	&& grep '/var/run/postgresql' src/include/pg_config_manual.h.new \
-	&& mv src/include/pg_config_manual.h.new src/include/pg_config_manual.h \
-	&& gnuArch="$(dpkg-architecture --query DEB_BUILD_GNU_TYPE)" \
+	awk '$1 == "#define" && $2 == "DEFAULT_PGSOCKET_DIR" && $3 == "\"/tmp\"" { $3 = "\"/var/run/postgresql\""; print; next } { print }' src/include/pg_config_manual.h > src/include/pg_config_manual.h.new; \
+	grep '/var/run/postgresql' src/include/pg_config_manual.h.new; \
+	mv src/include/pg_config_manual.h.new src/include/pg_config_manual.h; \
+	gnuArch="$(dpkg-architecture --query DEB_BUILD_GNU_TYPE)"; \
 # explicitly update autoconf config.guess and config.sub so they support more arches/libcs
-	&& wget -O config/config.guess 'https://git.savannah.gnu.org/cgit/config.git/plain/config.guess?id=7d3d27baf8107b630586c962c057e22149653deb' \
-	&& wget -O config/config.sub 'https://git.savannah.gnu.org/cgit/config.git/plain/config.sub?id=7d3d27baf8107b630586c962c057e22149653deb' \
+	wget -O config/config.guess 'https://git.savannah.gnu.org/cgit/config.git/plain/config.guess?id=7d3d27baf8107b630586c962c057e22149653deb'; \
+	wget -O config/config.sub 'https://git.savannah.gnu.org/cgit/config.git/plain/config.sub?id=7d3d27baf8107b630586c962c057e22149653deb'; \
 # configure options taken from:
 # https://anonscm.debian.org/cgit/pkg-postgresql/postgresql.git/tree/debian/rules?h=9.5
-	&& ./configure \
+	./configure \
 		--build="$gnuArch" \
 # "/usr/src/postgresql/src/backend/access/common/tupconvert.c:105: undefined reference to `libintl_gettext'"
 #		--enable-nls \
@@ -111,30 +104,34 @@ RUN set -ex \
 		--with-libxml \
 		--with-libxslt \
 		--with-icu \
-	&& make -j "$(nproc)" world \
-	&& make install-world \
-	&& make -C contrib install \
+	; \
+	make -j "$(nproc)" world; \
+	make install-world; \
+	make -C contrib install; \
 	\
-	&& runDeps="$( \
+	runDeps="$( \
 		scanelf --needed --nobanner --format '%n#p' --recursive /usr/local \
 			| tr ',' '\n' \
 			| sort -u \
 			| awk 'system("[ -e /usr/local/lib/" $1 " ]") == 0 { next } { print "so:" $1 }' \
-	)" \
-	&& apk add --no-cache --virtual .postgresql-rundeps \
+	)"; \
+	apk add --no-cache --virtual .postgresql-rundeps \
 		$runDeps \
 		bash \
 		su-exec \
 # tzdata is optional, but only adds around 1Mb to image size and is recommended by Django documentation:
 # https://docs.djangoproject.com/en/1.10/ref/databases/#optimizing-postgresql-s-configuration
 		tzdata \
-	&& apk del .fetch-deps .build-deps \
-	&& cd / \
-	&& rm -rf \
+	; \
+	apk del --no-network .build-deps; \
+	cd /; \
+	rm -rf \
 		/usr/src/postgresql \
 		/usr/local/share/doc \
 		/usr/local/share/man \
-	&& find /usr/local -name '*.a' -delete
+	; \
+	\
+	postgres --version
 
 # make the sample config easier to munge (and "correct by default")
 RUN sed -ri "s!^#?(listen_addresses)\s*=\s*\S+.*!\1 = '*'!" /usr/local/share/postgresql/postgresql.conf.sample
