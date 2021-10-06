@@ -1,14 +1,14 @@
 ## Tag Info
 
-* **v2.1.3 ( latest )** : alpine:3.13
-* **v2.1.1** : CentOS 7 / Java 8
-* **v2.1.0** : CentOS 7 / Java 8
-* **v2.0.0** : CentOS 7 / Java 8
-* **v1.3.2** : CentOS 7 / Java 8
-* **v1.3.1** : CentOS 7 / Java 8
-* **v1.3.0** : CentOS 7 / Java 8
-
-
+* **v2.5.0**
+  * v2.5.0 - alpine:3.14
+  * v2.5.0-debian - debian:bullseye-slim
+  * v2.5.0-centos - centos:8
+* **v2.1.3**
+  * v2.1.3 - alpine:3.13
+  * v2.1.3-debian - debian:stretch
+* older than **v2.1.1**
+  * Based on CentOS 7
 
 ## Getting started
 
