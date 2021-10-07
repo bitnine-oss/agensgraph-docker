@@ -1,4 +1,4 @@
-name: alpine build
+name: centos build
 
 on:
   push:
