@@ -224,8 +224,8 @@ docker_setup_env() {
 	: "${POSTGRES_HOST_AUTH_METHOD:=md5}"
 
 	declare -g DATABASE_ALREADY_EXISTS
-	# look specifically for AG_VERSION, as it is expected in the DB dir
-	if [ -s "$PGDATA/AG_VERSION" ]; then
+	# look specifically for PG_VERSION, as it is expected in the DB dir
+	if [ -s "$PGDATA/PG_VERSION" ]; then
 		DATABASE_ALREADY_EXISTS='true'
 	fi
 }
