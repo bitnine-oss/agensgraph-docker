@@ -1,4 +1,4 @@
-name: alpine build
+name: debian build
 
 on:
   push:
