@@ -72,7 +72,7 @@ RUN mkdir /docker-entrypoint-initdb.d
 
 ENV PG_MAJOR 12
 ENV AG_VERSION v2.12.0
-ENV AG_SHA256 bb46bfd32b2e465bd6e030b134f1676affb2ba9ff1cd1ad94e1c99a6c4152e12
+ENV AG_SHA256 5160ea3305b988584506d33b841490cb8677ed3fc093acf47ad87decc8999851
 
 RUN set -eux; \
 	apt-get update; \
