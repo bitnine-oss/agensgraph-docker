@@ -46,7 +46,7 @@ RUN set -eux; \
         libxml2-utils \
 		libxslt-dev \
 		linux-headers \
-		llvm11-dev clang g++ \
+# llvm11-dev clang g++ \
 		make \
 #		openldap-dev \
 		openssl-dev \
@@ -106,7 +106,7 @@ RUN set -eux; \
 		--with-libxml \
 		--with-libxslt \
 		--with-icu \
-		--with-llvm \
+# --with-llvm \
 	; \
 	make -j "$(nproc)" world; \
 	make install-world; \
