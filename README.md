@@ -1,5 +1,8 @@
 ## Tag Info
-
+* **v2.12.0**
+  * v2.12.0 - alpine:3.14
+  * v2.12.0-debian - debian:bullseye-slim
+  * v2.12.0-rockylinux - rockylinux/rockylinux:8.4
 * **v2.5.0**
   * v2.5.0 - alpine:3.14
   * v2.5.0-debian - debian:bullseye-slim
