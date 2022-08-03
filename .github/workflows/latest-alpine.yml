@@ -26,7 +26,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Find latest directory name
         run: |
-          echo "::set-output name=NAME::$(ls -d ./*/ -l | tail -n 1 | awk '{print $9}')"
+          python3 ./.github/workflows/FindVer.py
         id: tagname
       -
         name: Build and push
