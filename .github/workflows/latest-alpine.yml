@@ -34,4 +34,4 @@ jobs:
         with:
           context: ${{ steps.tagname.outputs.NAME }}alpine/
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/agensgraph:latest
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/agensgraph:latest  
