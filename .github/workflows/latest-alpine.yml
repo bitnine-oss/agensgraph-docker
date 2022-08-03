@@ -26,7 +26,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Find latest directory name
         run: |
-          echo "python3 FindVer.py"
+          python3 FindVer.py
         id: tagname
       -
         name: Build and push
