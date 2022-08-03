@@ -17,5 +17,5 @@ for x in arr:
         prev = comp
         ret = x
 
-print('/' + ret)
+print('/' + ret +'/')
 
