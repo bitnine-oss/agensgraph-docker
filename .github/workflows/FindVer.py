@@ -14,11 +14,11 @@ ret = arr[0]
 for x in arr:
     
     comp = int(re.sub('[a-zA-Zㄱ-힗-=+,._#/\?:^$.@*\"※~&%ㆍ!』\\‘|\(\)\[\]\<\>`\'…》]', '', x))
-    
+    print(comp)
     if(int(comp)==int(prev) and len(x) > len(ret)):
         prev = comp
         ret = x
-
+        
     if(int(comp) > int(prev)):
         prev = comp
         ret = x
