@@ -23,7 +23,7 @@ RUN set -eux; \
 
 # grab gosu for easy step-down from root
 # https://github.com/tianon/gosu/releases
-ENV GOSU_VERSION 1.12
+ENV GOSU_VERSION 1.14
 RUN set -eux; \
 	savedAptMark="$(apt-mark showmanual)"; \
 	apt-get update; \
@@ -59,19 +59,16 @@ ENV LANG en_US.utf8
 RUN set -eux; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
-# install "nss_wrapper" in case we need to fake "/etc/passwd" and "/etc/group" (especially for OpenShift)
-# https://github.com/docker-library/postgres/issues/359
-# https://cwrap.org/nss_wrapper.html
 		libnss-wrapper \
-# install "xz-utils" for .sql.xz docker-entrypoint-initdb.d files
 		xz-utils \
+		zstd \
 	; \
 	rm -rf /var/lib/apt/lists/*
 
 RUN mkdir /docker-entrypoint-initdb.d
 
 ENV PG_MAJOR 12
-ENV AG_VERSION v2.12.0
+ENV AG_VERSION v2.12.0_rc
 ENV AG_SHA256 7d6434bb7fe5d6a637379ba1cfab1a76bf60f828229025c82ff310a82e32c7cd
 
 RUN set -eux; \
