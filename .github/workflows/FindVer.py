@@ -18,7 +18,7 @@ for x in arr:
     if(int(comp)==int(prev) and len(x) > len(ret)):
         prev = comp
         ret = x
-
+        
     if(int(comp) > int(prev)):
         prev = comp
         ret = x
