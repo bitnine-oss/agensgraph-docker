@@ -23,7 +23,7 @@ RUN set -eux; \
 
 # grab gosu for easy step-down from root
 # https://github.com/tianon/gosu/releases
-ENV GOSU_VERSION 1.12
+ENV GOSU_VERSION 1.14
 RUN set -eux; \
 	savedAptMark="$(apt-mark showmanual)"; \
 	apt-get update; \
@@ -59,26 +59,52 @@ ENV LANG en_US.utf8
 RUN set -eux; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
-# install "nss_wrapper" in case we need to fake "/etc/passwd" and "/etc/group" (especially for OpenShift)
-# https://github.com/docker-library/postgres/issues/359
-# https://cwrap.org/nss_wrapper.html
 		libnss-wrapper \
-# install "xz-utils" for .sql.xz docker-entrypoint-initdb.d files
 		xz-utils \
+		zstd \
 	; \
 	rm -rf /var/lib/apt/lists/*
 
 RUN mkdir /docker-entrypoint-initdb.d
 
+RUN set -ex; \
+# pub   4096R/ACCC4CF8 2011-10-13 [expires: 2019-07-02]
+#       Key fingerprint = B97B 0AFC AA1A 47F0 44F2  44A0 7FCC 7D46 ACCC 4CF8
+# uid                  PostgreSQL Debian Repository
+	key='B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8'; \
+	export GNUPGHOME="$(mktemp -d)"; \
+	mkdir -p /usr/local/share/keyrings/; \
+	gpg --batch --keyserver keyserver.ubuntu.com --recv-keys "$key"; \
+	gpg --batch --export --armor "$key" > /usr/local/share/keyrings/postgres.gpg.asc; \
+	command -v gpgconf > /dev/null && gpgconf --kill all; \
+	rm -rf "$GNUPGHOME"
+
 ENV PG_MAJOR 12
-ENV AG_VERSION v2.12.0
+ENV PATH $PATH:/usr/lib/postgresql/$PG_MAJOR/bin
+
+ENV AG_VERSION v2.12.0_rc
 ENV AG_SHA256 7d6434bb7fe5d6a637379ba1cfab1a76bf60f828229025c82ff310a82e32c7cd
 
-RUN set -eux; \
-	apt-get update; \
+RUN set -ex; \
+    export PYTHONDONTWRITEBYTECODE=1; \
+    \
+    dpkgArch="$(dpkg --print-architecture)"; \
+    aptRepo="[ signed-by=/usr/local/share/keyrings/postgres.gpg.asc ] http://apt.postgresql.org/pub/repos/apt/ bullseye-pgdg main $PG_MAJOR"; \
+    case "$dpkgArch" in \
+        amd64 | arm64 | ppc64el) \
+    # arches officialy built by upstream
+    			echo "deb $aptRepo" > /etc/apt/sources.list.d/pgdg.list; \
+    			apt-get update; \
+    			;; \
+    		*) \
+    \
+    \
+    apt-get update; \
 	apt-get upgrade -y; \
 	apt-get install -y --no-install-recommends ca-certificates wget; \
-	wget -O postgresql.tar.gz "https://github.com/bitnine-oss/agensgraph/archive/$AG_VERSION.tar.gz"; \
+    dpkgArch="$(dpkg --print-architecture)"; \
+    \
+    wget -O postgresql.tar.gz "https://github.com/bitnine-oss/agensgraph/archive/$AG_VERSION.tar.gz"; \
 	echo "$AG_SHA256 *postgresql.tar.gz" | sha256sum -c -; \
 	mkdir -p /usr/src/postgresql; \
 	tar \
@@ -153,8 +179,11 @@ RUN set -eux; \
 
 # make the sample config easier to munge (and "correct by default")
 RUN set -eux; \
-	sed -ri "s!^#?(listen_addresses)\s*=\s*\S+.*!\1 = '*'!" /usr/local/share/postgresql/postgresql.conf.sample; \
-	grep -F "listen_addresses = '*'" /usr/local/share/postgresql/postgresql.conf.sample
+	dpkg-divert --add --rename --divert "/usr/share/postgresql/postgresql.conf.sample.dpkg" "/usr/share/postgresql/$PG_MAJOR/postgresql.conf.sample"; \
+	cp -v /usr/share/postgresql/postgresql.conf.sample.dpkg /usr/share/postgresql/postgresql.conf.sample; \
+	ln -sv ../postgresql.conf.sample "/usr/share/postgresql/$PG_MAJOR/"; \
+	sed -ri "s!^#?(listen_addresses)\s*=\s*\S+.*!\1 = '*'!" /usr/share/postgresql/postgresql.conf.sample; \
+	grep -F "listen_addresses = '*'" /usr/share/postgresql/postgresql.conf.sample
 
 RUN mkdir -p /var/run/postgresql && chown -R postgres:postgres /var/run/postgresql && chmod 2777 /var/run/postgresql
 
