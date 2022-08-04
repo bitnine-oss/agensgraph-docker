@@ -67,21 +67,7 @@ RUN set -eux; \
 
 RUN mkdir /docker-entrypoint-initdb.d
 
-RUN set -ex; \
-# pub   4096R/ACCC4CF8 2011-10-13 [expires: 2019-07-02]
-#       Key fingerprint = B97B 0AFC AA1A 47F0 44F2  44A0 7FCC 7D46 ACCC 4CF8
-# uid                  PostgreSQL Debian Repository
-	key='B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8'; \
-	export GNUPGHOME="$(mktemp -d)"; \
-	mkdir -p /usr/local/share/keyrings/; \
-	gpg --batch --keyserver keyserver.ubuntu.com --recv-keys "$key"; \
-	gpg --batch --export --armor "$key" > /usr/local/share/keyrings/postgres.gpg.asc; \
-	command -v gpgconf > /dev/null && gpgconf --kill all; \
-	rm -rf "$GNUPGHOME"
-
 ENV PG_MAJOR 12
-ENV PATH $PATH:/usr/lib/postgresql/$PG_MAJOR/bin
-
 ENV AG_VERSION v2.12.0_rc
 ENV AG_SHA256 7d6434bb7fe5d6a637379ba1cfab1a76bf60f828229025c82ff310a82e32c7cd
 
