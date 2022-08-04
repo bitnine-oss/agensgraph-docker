@@ -85,26 +85,11 @@ ENV PATH $PATH:/usr/lib/postgresql/$PG_MAJOR/bin
 ENV AG_VERSION v2.12.0_rc
 ENV AG_SHA256 7d6434bb7fe5d6a637379ba1cfab1a76bf60f828229025c82ff310a82e32c7cd
 
-RUN set -ex; \
-    export PYTHONDONTWRITEBYTECODE=1; \
-    \
-    dpkgArch="$(dpkg --print-architecture)"; \
-    aptRepo="[ signed-by=/usr/local/share/keyrings/postgres.gpg.asc ] http://apt.postgresql.org/pub/repos/apt/ bullseye-pgdg main $PG_MAJOR"; \
-    case "$dpkgArch" in \
-        amd64 | arm64 | ppc64el) \
-    # arches officialy built by upstream
-    			echo "deb $aptRepo" > /etc/apt/sources.list.d/pgdg.list; \
-    			apt-get update; \
-    			;; \
-    		*) \
-    \
-    \
-    apt-get update; \
+RUN set -eux; \
+	apt-get update; \
 	apt-get upgrade -y; \
 	apt-get install -y --no-install-recommends ca-certificates wget; \
-    dpkgArch="$(dpkg --print-architecture)"; \
-    \
-    wget -O postgresql.tar.gz "https://github.com/bitnine-oss/agensgraph/archive/$AG_VERSION.tar.gz"; \
+	wget -O postgresql.tar.gz "https://github.com/bitnine-oss/agensgraph/archive/$AG_VERSION.tar.gz"; \
 	echo "$AG_SHA256 *postgresql.tar.gz" | sha256sum -c -; \
 	mkdir -p /usr/src/postgresql; \
 	tar \
@@ -179,11 +164,8 @@ RUN set -ex; \
 
 # make the sample config easier to munge (and "correct by default")
 RUN set -eux; \
-	dpkg-divert --add --rename --divert "/usr/share/postgresql/postgresql.conf.sample.dpkg" "/usr/share/postgresql/$PG_MAJOR/postgresql.conf.sample"; \
-	cp -v /usr/share/postgresql/postgresql.conf.sample.dpkg /usr/share/postgresql/postgresql.conf.sample; \
-	ln -sv ../postgresql.conf.sample "/usr/share/postgresql/$PG_MAJOR/"; \
-	sed -ri "s!^#?(listen_addresses)\s*=\s*\S+.*!\1 = '*'!" /usr/share/postgresql/postgresql.conf.sample; \
-	grep -F "listen_addresses = '*'" /usr/share/postgresql/postgresql.conf.sample
+	sed -ri "s!^#?(listen_addresses)\s*=\s*\S+.*!\1 = '*'!" /usr/local/share/postgresql/postgresql.conf.sample; \
+	grep -F "listen_addresses = '*'" /usr/local/share/postgresql/postgresql.conf.sample
 
 RUN mkdir -p /var/run/postgresql && chown -R postgres:postgres /var/run/postgresql && chmod 2777 /var/run/postgresql
 
