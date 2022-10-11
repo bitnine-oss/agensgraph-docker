@@ -46,7 +46,8 @@ RUN set -eux; \
         libxml2-utils \
 		libxslt-dev \
 		linux-headers \
-# llvm11-dev clang g++ \
+		docbook-xsl \
+    # llvm11-dev clang g++ \
 		make \
 #		openldap-dev \
 		openssl-dev \
