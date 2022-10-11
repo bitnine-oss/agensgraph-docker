@@ -89,7 +89,7 @@ RUN set -eux; \
 	; \
 	rm postgresql.tar.gz; \
 	\
-    build_deps='build-essential libreadline-dev zlib1g-dev flex bison libxml2-dev libxslt1-dev libssl-dev libxml2-utils xsltproc pkg-config uuid-dev';\
+    build_deps='build-essential libreadline-dev zlib1g-dev flex bison libxml2-dev libxslt1-dev libssl-dev libxml2-utils xsltproc pkg-config uuid-dev docbook-xsl';\
 #    tcl8.6-dev
     apt-get install -y $build_deps pax-utils; \
     cd /usr/src/postgresql; \

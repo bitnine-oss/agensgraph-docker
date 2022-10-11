@@ -66,6 +66,7 @@ RUN set -eux; \
         libicu-devel \
         readline readline-devel \
         libuuid-devel \
+        docbook-style-xsl \
         ; \
 	\
 	wget -O postgresql.tar.gz "https://github.com/bitnine-oss/agensgraph/archive/$AG_VERSION.tar.gz"; \
