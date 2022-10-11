@@ -1,3 +1,4 @@
+# -*- coding: utf8 -*-
 import os
 import re 
 
@@ -13,8 +14,9 @@ arr = list.strip().split('/\n')
 ret = arr[0]
 for x in arr:
     
-    comp = int(re.sub('[a-zA-Zㄱ-힗-=+,._#/\?:^$.@*\"※~&%ㆍ!』\\‘|\(\)\[\]\<\>`\'…》]', '', x))
-    
+    #comp = int(re.sub('[a-zA-Zㄱ-힗-=+,._#/\?:^$.@*\"※~&%ㆍ!』\\‘|\(\)\[
+    # \]\<\>`\'…》]', '', x))
+    comp = int(re.sub('[a-zA-Z._/\?:^$.@*\"※~&%ㆍ!』\\‘|\(\)\[''\]\<\>`\'…》]', '', x))
     if(int(comp)==int(prev) and len(x) > len(ret)):
         prev = comp
         ret = x
