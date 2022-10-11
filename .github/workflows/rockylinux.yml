@@ -1,4 +1,4 @@
-name: centos build
+name: rockylinux build
 
 on:
   push:
@@ -32,6 +32,6 @@ jobs:
         name: Build and push
         uses: docker/build-push-action@v2
         with:
-          context: ${{ steps.branch-name.outputs.current_branch }}/centos/
+          context: ${{ steps.branch-name.outputs.current_branch }}/rockylinux/
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/agensgraph:${{ steps.branch-name.outputs.current_branch }}-centos
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/agensgraph:${{ steps.branch-name.outputs.current_branch }}-rocky
