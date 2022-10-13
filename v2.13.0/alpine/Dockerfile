@@ -181,6 +181,6 @@ STOPSIGNAL SIGINT
 # The default in most runtimes (such as Docker) is 10 seconds, and the
 # documentation at https://www.postgresql.org/docs/12/server-start.html notes
 # that even 90 seconds may not be long enough in many instances.
-
+#
 EXPOSE 5432
 CMD ["postgres"]
