@@ -70,9 +70,9 @@ RUN set -eux; \
 
 RUN mkdir /docker-entrypoint-initdb.d
 
-ENV PG_MAJOR 12
-ENV AG_VERSION v2.12.0
-ENV AG_SHA256 7d6434bb7fe5d6a637379ba1cfab1a76bf60f828229025c82ff310a82e32c7cd
+ENV PG_MAJOR 13
+ENV AG_VERSION v2.13.0
+ENV AG_SHA256 4eaa956e7f7a9b1eb4dc2ae4651b9b3578a13a3020b21e529f9908e3579e79ca
 
 RUN set -eux; \
 	apt-get update; \
@@ -89,7 +89,7 @@ RUN set -eux; \
 	; \
 	rm postgresql.tar.gz; \
 	\
-    build_deps='build-essential libreadline-dev zlib1g-dev flex bison libxml2-dev libxslt1-dev libssl-dev libxml2-utils xsltproc pkg-config uuid-dev';\
+    build_deps='build-essential libreadline-dev zlib1g-dev flex bison libxml2-dev libxslt1-dev libssl-dev libxml2-utils xsltproc pkg-config uuid-dev docbook-xsl';\
 #    tcl8.6-dev
     apt-get install -y $build_deps pax-utils; \
     cd /usr/src/postgresql; \

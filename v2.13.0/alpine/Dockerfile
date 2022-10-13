@@ -1,72 +1,26 @@
-FROM rockylinux/rockylinux:8.4
+FROM alpine:3.16
 
-# explicitly set user/group IDs
+# 70 is the standard uid/gid for "postgres" in Alpine
+# https://git.alpinelinux.org/aports/tree/main/postgresql/postgresql.pre-install?h=3.12-stable
 RUN set -eux; \
-	groupadd -r postgres; \
-	useradd -r -g postgres --home-dir=/var/lib/postgresql --shell=/bin/bash postgres; \
+	addgroup -g 70 -S postgres; \
+	adduser -u 70 -S -D -G postgres -H -h /var/lib/postgresql -s /bin/sh postgres; \
 	mkdir -p /var/lib/postgresql; \
 	chown -R postgres:postgres /var/lib/postgresql
 
-ENV GOSU_VERSION=1.14
-RUN gpg --keyserver hkps://keys.openpgp.org --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \
-    && curl -o /usr/local/bin/gosu -SL "https://github.com/tianon/gosu/releases/download/${GOSU_VERSION}/gosu-amd64" \
-    && curl -o /usr/local/bin/gosu.asc -SL "https://github.com/tianon/gosu/releases/download/${GOSU_VERSION}/gosu-amd64.asc" \
-    && gpg --verify /usr/local/bin/gosu.asc \
-    && rm /usr/local/bin/gosu.asc \
-    && rm -r /root/.gnupg/ \
-    && chmod +x /usr/local/bin/gosu \
-    # Verify that the binary works
-    && gosu nobody true
+# su-exec (gosu-compatible) is installed further down
 
+# make the "en_US.UTF-8" locale so postgres will be utf-8 enabled by default
+# alpine doesn't require explicit locale-file generation
 ENV LANG en_US.utf8
 
 RUN mkdir /docker-entrypoint-initdb.d
 
-ENV PG_MAJOR 12
-ENV AG_VERSION v2.12.0
-ENV AG_SHA256 7d6434bb7fe5d6a637379ba1cfab1a76bf60f828229025c82ff310a82e32c7cd
+ENV PG_MAJOR 13
+ENV AG_VERSION v2.13.0
+ENV AG_SHA256 4eaa956e7f7a9b1eb4dc2ae4651b9b3578a13a3020b21e529f9908e3579e79ca
 
 RUN set -eux; \
-	\
-	dnf -y install glibc-langpack-en dnf-plugins-core epel-release; \
-    dnf config-manager --set-enabled powertools; \
-	\
-	dnf update --assumeyes --skip-broken; \
-    dnf install --assumeyes \
-        wget \
-        bison \
-#        coreutils \
-        dpkg-dev dpkg \
-        flex \
-        gcc \
-#        krb5-dev \
-        glibc-devel \
-        libedit-devel \
-        libxml2-devel \
-#        libxml2-utils \
-        libxslt-devel \
-#        linux-headers \
-# llvm-devel clang gcc-c++ \
-        make \
-#		 openldap-dev \
-        openssl-devel \
-# configure: error: prove not found
-        perl-utils \
-# configure: error: Perl module IPC::Run is required to run TAP tests
-        perl-IPC-Run \
-        perl-Test-Simple \
-        perl-Test-Harness \
-#		 perl-dev \
-#		 python-dev \
-#		 python3-dev \
-#		 tcl-dev \
-#        util-linux \
-        zlib-devel \
-# https://www.postgresql.org/docs/10/static/release-10.html#id-1.11.6.9.5.13
-        libicu-devel \
-        readline readline-devel \
-        libuuid-devel \
-        ; \
 	\
 	wget -O postgresql.tar.gz "https://github.com/bitnine-oss/agensgraph/archive/$AG_VERSION.tar.gz"; \
 	echo "$AG_SHA256 *postgresql.tar.gz" | sha256sum -c -; \
@@ -78,6 +32,36 @@ RUN set -eux; \
 		--strip-components 1 \
 	; \
 	rm postgresql.tar.gz; \
+	\
+	apk add --no-cache --virtual .build-deps \
+		bison \
+		coreutils \
+		dpkg-dev dpkg \
+		flex \
+		gcc \
+		krb5-dev \
+		libc-dev \
+		libedit-dev \
+		libxml2-dev \
+		libxslt-dev \
+		linux-headers \
+		llvm-dev clang g++ \
+		make \
+		openldap-dev \
+		openssl-dev \
+		perl-dev \
+		perl-ipc-run \
+		perl-utils \
+		python3-dev \
+		tcl-dev \
+		util-linux-dev \
+		zlib-dev \
+# https://www.postgresql.org/docs/10/static/release-10.html#id-1.11.6.9.5.13
+		icu-dev \
+# https://www.postgresql.org/docs/14/release-14.html#id-1.11.6.5.5.3.7
+		lz4-dev \
+		docbook-xsl \
+	; \
 	\
 	cd /usr/src/postgresql; \
 # update "DEFAULT_PGSOCKET_DIR" to "/var/run/postgresql" (matching Debian)
@@ -106,38 +90,50 @@ RUN set -eux; \
 		--with-pgport=5432 \
 		--with-system-tzdata=/usr/share/zoneinfo \
 		--prefix=/usr/local \
-        --with-includes=/usr/local/include \
-        --with-libraries=/usr/local/lib \
-		\
-# these make our image abnormally large (at least 100MB larger), which seems uncouth for an "Alpine" (ie, "small") variant :)
-#		--with-krb5 \
-#		--with-gssapi \
-#		--with-ldap \
-#		--with-tcl \
-#		--with-perl \
-#		--with-python \
+		--with-includes=/usr/local/include \
+		--with-libraries=/usr/local/lib \
+		--with-krb5 \
+		--with-gssapi \
+		--with-ldap \
+		--with-tcl \
+		--with-perl \
+		--with-python \
 #		--with-pam \
 		--with-openssl \
 		--with-libxml \
 		--with-libxslt \
 		--with-icu \
-# --with-llvm \
+#		--with-llvm \
+		--with-lz4 \
 	; \
-	make -j "$(nproc)" world; \
-	make install-world; \
-	make -C contrib install; \
+#	make -j "$(nproc)" world; \
+	make -j install; \
+#	make -C contrib install; \
 	\
-	dnf clean all; \
+	runDeps="$( \
+		scanelf --needed --nobanner --format '%n#p' --recursive /usr/local \
+			| tr ',' '\n' \
+			| sort -u \
+			| awk 'system("[ -e /usr/local/lib/" $1 " ]") == 0 { next } { print "so:" $1 }' \
+			| grep -v -e perl -e python -e tcl \
+	)"; \
+	apk add --no-cache --virtual .postgresql-rundeps \
+		$runDeps \
+		bash \
+		su-exec \
+		tzdata \
+		zstd \
+# https://wiki.alpinelinux.org/wiki/Release_Notes_for_Alpine_3.16.0#ICU_data_split
+		icu-data-full \
+	; \
+	apk del --no-network .build-deps; \
 	cd /; \
 	rm -rf \
 		/usr/src/postgresql \
-		/usr/local/share/doc \
-		/usr/local/share/man \
+#		/usr/local/share/doc \
+#		/usr/local/share/man \
 	; \
 	\
-	/bin/bash -c 'echo "/usr/local/lib" > /etc/ld.so.conf.d/agensgraph.conf'; \
-    ldconfig; \
-    \
 	postgres --version
 
 # make the sample config easier to munge (and "correct by default")

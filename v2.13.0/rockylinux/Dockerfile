@@ -1,83 +1,74 @@
-# vim:set ft=dockerfile:
-FROM debian:bullseye-slim
-
-RUN set -ex; \
-	if ! command -v gpg > /dev/null; then \
-		apt-get update; \
-		apt-get install -y --no-install-recommends \
-			gnupg \
-			dirmngr \
-		; \
-		rm -rf /var/lib/apt/lists/*; \
-	fi
+FROM rockylinux/rockylinux:8.4
 
 # explicitly set user/group IDs
 RUN set -eux; \
-	groupadd -r postgres --gid=999; \
-# https://salsa.debian.org/postgresql/postgresql-common/blob/997d842ee744687d99a2b2d95c1083a2615c79e8/debian/postgresql-common.postinst#L32-35
-	useradd -r -g postgres --uid=999 --home-dir=/var/lib/postgresql --shell=/bin/bash postgres; \
-# also create the postgres user's home directory with appropriate permissions
-# see https://github.com/docker-library/postgres/issues/274
+	groupadd -r postgres; \
+	useradd -r -g postgres --home-dir=/var/lib/postgresql --shell=/bin/bash postgres; \
 	mkdir -p /var/lib/postgresql; \
 	chown -R postgres:postgres /var/lib/postgresql
 
-# grab gosu for easy step-down from root
-# https://github.com/tianon/gosu/releases
-ENV GOSU_VERSION 1.12
-RUN set -eux; \
-	savedAptMark="$(apt-mark showmanual)"; \
-	apt-get update; \
-	apt-get install -y --no-install-recommends ca-certificates wget; \
-	rm -rf /var/lib/apt/lists/*; \
-	dpkgArch="$(dpkg --print-architecture | awk -F- '{ print $NF }')"; \
-	wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$dpkgArch"; \
-	wget -O /usr/local/bin/gosu.asc "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$dpkgArch.asc"; \
-	export GNUPGHOME="$(mktemp -d)"; \
-	gpg --batch --keyserver hkps://keys.openpgp.org --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4; \
-	gpg --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu; \
-	gpgconf --kill all; \
-	rm -rf "$GNUPGHOME" /usr/local/bin/gosu.asc; \
-	apt-mark auto '.*' > /dev/null; \
-	[ -z "$savedAptMark" ] || apt-mark manual $savedAptMark > /dev/null; \
-	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
-	chmod +x /usr/local/bin/gosu; \
-	gosu --version; \
-	gosu nobody true
+ENV GOSU_VERSION=1.14
+RUN gpg --keyserver hkps://keys.openpgp.org --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \
+    && curl -o /usr/local/bin/gosu -SL "https://github.com/tianon/gosu/releases/download/${GOSU_VERSION}/gosu-amd64" \
+    && curl -o /usr/local/bin/gosu.asc -SL "https://github.com/tianon/gosu/releases/download/${GOSU_VERSION}/gosu-amd64.asc" \
+    && gpg --verify /usr/local/bin/gosu.asc \
+    && rm /usr/local/bin/gosu.asc \
+    && rm -r /root/.gnupg/ \
+    && chmod +x /usr/local/bin/gosu \
+    # Verify that the binary works
+    && gosu nobody true
 
-# make the "en_US.UTF-8" locale so postgres will be utf-8 enabled by default
-RUN set -eux; \
-	if [ -f /etc/dpkg/dpkg.cfg.d/docker ]; then \
-# if this file exists, we're likely in "debian:xxx-slim", and locales are thus being excluded so we need to remove that exclusion (since we need locales)
-		grep -q '/usr/share/locale' /etc/dpkg/dpkg.cfg.d/docker; \
-		sed -ri '/\/usr\/share\/locale/d' /etc/dpkg/dpkg.cfg.d/docker; \
-		! grep -q '/usr/share/locale' /etc/dpkg/dpkg.cfg.d/docker; \
-	fi; \
-	apt-get update; apt-get install -y --no-install-recommends locales; rm -rf /var/lib/apt/lists/*; \
-	localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8
 ENV LANG en_US.utf8
-
-RUN set -eux; \
-	apt-get update; \
-	apt-get install -y --no-install-recommends \
-# install "nss_wrapper" in case we need to fake "/etc/passwd" and "/etc/group" (especially for OpenShift)
-# https://github.com/docker-library/postgres/issues/359
-# https://cwrap.org/nss_wrapper.html
-		libnss-wrapper \
-# install "xz-utils" for .sql.xz docker-entrypoint-initdb.d files
-		xz-utils \
-	; \
-	rm -rf /var/lib/apt/lists/*
 
 RUN mkdir /docker-entrypoint-initdb.d
 
-ENV PG_MAJOR 12
-ENV AG_VERSION v2.12.0
-ENV AG_SHA256 7d6434bb7fe5d6a637379ba1cfab1a76bf60f828229025c82ff310a82e32c7cd
+ENV PG_MAJOR 13
+ENV AG_VERSION v2.13.0
+ENV AG_SHA256 4eaa956e7f7a9b1eb4dc2ae4651b9b3578a13a3020b21e529f9908e3579e79ca
 
 RUN set -eux; \
-	apt-get update; \
-	apt-get upgrade -y; \
-	apt-get install -y --no-install-recommends ca-certificates wget; \
+	\
+	dnf -y install glibc-langpack-en dnf-plugins-core epel-release; \
+    dnf config-manager --set-enabled powertools; \
+	\
+	dnf update --assumeyes --skip-broken; \
+    dnf install --assumeyes \
+        wget \
+        bison \
+#        coreutils \
+        dpkg-dev dpkg \
+        flex \
+        gcc \
+#        krb5-dev \
+        glibc-devel \
+        libedit-devel \
+        libxml2-devel \
+#        libxml2-utils \
+        libxslt-devel \
+#        linux-headers \
+# llvm-devel clang gcc-c++ \
+        make \
+#		 openldap-dev \
+        openssl-devel \
+# configure: error: prove not found
+        perl-utils \
+# configure: error: Perl module IPC::Run is required to run TAP tests
+        perl-IPC-Run \
+        perl-Test-Simple \
+        perl-Test-Harness \
+#		 perl-dev \
+#		 python-dev \
+#		 python3-dev \
+#		 tcl-dev \
+#        util-linux \
+        zlib-devel \
+# https://www.postgresql.org/docs/10/static/release-10.html#id-1.11.6.9.5.13
+        libicu-devel \
+        readline readline-devel \
+        libuuid-devel \
+        docbook-style-xsl \
+        ; \
+	\
 	wget -O postgresql.tar.gz "https://github.com/bitnine-oss/agensgraph/archive/$AG_VERSION.tar.gz"; \
 	echo "$AG_SHA256 *postgresql.tar.gz" | sha256sum -c -; \
 	mkdir -p /usr/src/postgresql; \
@@ -89,10 +80,12 @@ RUN set -eux; \
 	; \
 	rm postgresql.tar.gz; \
 	\
-    build_deps='build-essential libreadline-dev zlib1g-dev flex bison libxml2-dev libxslt1-dev libssl-dev libxml2-utils xsltproc pkg-config uuid-dev';\
-#    tcl8.6-dev
-    apt-get install -y $build_deps pax-utils; \
-    cd /usr/src/postgresql; \
+	cd /usr/src/postgresql; \
+# update "DEFAULT_PGSOCKET_DIR" to "/var/run/postgresql" (matching Debian)
+# see https://anonscm.debian.org/git/pkg-postgresql/postgresql.git/tree/debian/patches/51-default-sockets-in-var.patch?id=8b539fcb3e093a521c095e70bdfa76887217b89f
+	awk '$1 == "#define" && $2 == "DEFAULT_PGSOCKET_DIR" && $3 == "\"/tmp\"" { $3 = "\"/var/run/postgresql\""; print; next } { print }' src/include/pg_config_manual.h > src/include/pg_config_manual.h.new; \
+	grep '/var/run/postgresql' src/include/pg_config_manual.h.new; \
+	mv src/include/pg_config_manual.h.new src/include/pg_config_manual.h; \
 	gnuArch="$(dpkg-architecture --query DEB_BUILD_GNU_TYPE)"; \
 # explicitly update autoconf config.guess and config.sub so they support more arches/libcs
 	wget -O config/config.guess 'https://git.savannah.gnu.org/cgit/config.git/plain/config.guess?id=7d3d27baf8107b630586c962c057e22149653deb'; \
@@ -105,6 +98,7 @@ RUN set -eux; \
 #		--enable-nls \
 		--enable-integer-datetimes \
 		--enable-thread-safety \
+		--enable-tap-tests \
 # skip debugging info -- we want tiny size instead
 #		--enable-debug \
 		--disable-rpath \
@@ -113,15 +107,14 @@ RUN set -eux; \
 		--with-pgport=5432 \
 		--with-system-tzdata=/usr/share/zoneinfo \
 		--prefix=/usr/local \
-		--with-includes=/usr/local/include \
-		--with-libraries=/usr/local/lib \
+        --with-includes=/usr/local/include \
+        --with-libraries=/usr/local/lib \
 		\
 # these make our image abnormally large (at least 100MB larger), which seems uncouth for an "Alpine" (ie, "small") variant :)
 #		--with-krb5 \
 #		--with-gssapi \
 #		--with-ldap \
 #		--with-tcl \
-#       --with-tclconfig=/usr/lib/tcl8.6/ \
 #		--with-perl \
 #		--with-python \
 #		--with-pam \
@@ -129,30 +122,28 @@ RUN set -eux; \
 		--with-libxml \
 		--with-libxslt \
 		--with-icu \
+# --with-llvm \
 	; \
 	make -j "$(nproc)" world; \
 	make install-world; \
 	make -C contrib install; \
 	\
-#	runDeps="$( \
-#		scanelf --needed --nobanner --format '%n#p' --recursive /usr/local \
-#			| tr ',' '\n' \
-#			| sort -u \
-#			| awk 'system("[ -e /usr/local/lib/" $1 " ]") == 0 { next } { print "so:" $1 }' \
-#	)"; \
-    apt purge -y $build_deps pax-utils; \
-    apt-get autoremove --purge -y; \
-    apt-get install -y --no-install-recommends libxml2; \
-    apt-get clean; \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*; \
+	dnf clean all; \
+	cd /; \
 	rm -rf \
 		/usr/src/postgresql \
 		/usr/local/share/doc \
-		/usr/local/share/man; \
-    postgres --version
+		/usr/local/share/man \
+	; \
+	\
+	/bin/bash -c 'echo "/usr/local/lib" > /etc/ld.so.conf.d/agensgraph.conf'; \
+    ldconfig; \
+    \
+	postgres --version
 
 # make the sample config easier to munge (and "correct by default")
 RUN set -eux; \
+	cp -v /usr/local/share/postgresql/postgresql.conf.sample /usr/local/share/postgresql/postgresql.conf.sample.orig; \
 	sed -ri "s!^#?(listen_addresses)\s*=\s*\S+.*!\1 = '*'!" /usr/local/share/postgresql/postgresql.conf.sample; \
 	grep -F "listen_addresses = '*'" /usr/local/share/postgresql/postgresql.conf.sample
 
