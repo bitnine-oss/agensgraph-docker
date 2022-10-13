@@ -1,4 +1,4 @@
-FROM alpine:3.14
+FROM alpine:3.16
 
 # 70 is the standard uid/gid for "postgres" in Alpine
 # https://git.alpinelinux.org/aports/tree/main/postgresql/postgresql.pre-install?h=3.12-stable
@@ -39,29 +39,28 @@ RUN set -eux; \
 		dpkg-dev dpkg \
 		flex \
 		gcc \
-#		krb5-dev \
+		krb5-dev \
 		libc-dev \
 		libedit-dev \
 		libxml2-dev \
-        libxml2-utils \
 		libxslt-dev \
 		linux-headers \
-# llvm11-dev clang g++ \
+		llvm-dev clang g++ \
 		make \
-#		openldap-dev \
+		openldap-dev \
 		openssl-dev \
-# configure: error: prove not found
-		perl-utils \
-# configure: error: Perl module IPC::Run is required to run TAP tests
+		perl-dev \
 		perl-ipc-run \
-#		perl-dev \
-#		python-dev \
-#		python3-dev \
-#		tcl-dev \
+		perl-utils \
+		python3-dev \
+		tcl-dev \
 		util-linux-dev \
 		zlib-dev \
 # https://www.postgresql.org/docs/10/static/release-10.html#id-1.11.6.9.5.13
 		icu-dev \
+# https://www.postgresql.org/docs/14/release-14.html#id-1.11.6.5.5.3.7
+		lz4-dev \
+		docbook-xsl \
 	; \
 	\
 	cd /usr/src/postgresql; \
@@ -93,45 +92,46 @@ RUN set -eux; \
 		--prefix=/usr/local \
 		--with-includes=/usr/local/include \
 		--with-libraries=/usr/local/lib \
-		\
-# these make our image abnormally large (at least 100MB larger), which seems uncouth for an "Alpine" (ie, "small") variant :)
-#		--with-krb5 \
-#		--with-gssapi \
-#		--with-ldap \
-#		--with-tcl \
-#		--with-perl \
-#		--with-python \
+		--with-krb5 \
+		--with-gssapi \
+		--with-ldap \
+		--with-tcl \
+		--with-perl \
+		--with-python \
 #		--with-pam \
 		--with-openssl \
 		--with-libxml \
 		--with-libxslt \
 		--with-icu \
-# --with-llvm \
+#		--with-llvm \
+		--with-lz4 \
 	; \
-	make -j "$(nproc)" world; \
-	make install-world; \
-	make -C contrib install; \
+#	make -j "$(nproc)" world; \
+	make -j install; \
+#	make -C contrib install; \
 	\
 	runDeps="$( \
 		scanelf --needed --nobanner --format '%n#p' --recursive /usr/local \
 			| tr ',' '\n' \
 			| sort -u \
 			| awk 'system("[ -e /usr/local/lib/" $1 " ]") == 0 { next } { print "so:" $1 }' \
+			| grep -v -e perl -e python -e tcl \
 	)"; \
 	apk add --no-cache --virtual .postgresql-rundeps \
 		$runDeps \
 		bash \
 		su-exec \
-# tzdata is optional, but only adds around 1Mb to image size and is recommended by Django documentation:
-# https://docs.djangoproject.com/en/1.10/ref/databases/#optimizing-postgresql-s-configuration
 		tzdata \
+		zstd \
+# https://wiki.alpinelinux.org/wiki/Release_Notes_for_Alpine_3.16.0#ICU_data_split
+		icu-data-full \
 	; \
 	apk del --no-network .build-deps; \
 	cd /; \
 	rm -rf \
 		/usr/src/postgresql \
-		/usr/local/share/doc \
-		/usr/local/share/man \
+#		/usr/local/share/doc \
+#		/usr/local/share/man \
 	; \
 	\
 	postgres --version
