@@ -1,6 +1,6 @@
 ## Tag Info
 * **v2.13.0**
-  * v2.13.0 - alpine:3.14
+  * v2.13.0 - alpine:3.16
   * v2.13.0-debian - debian:bullseye-slim
   * v2.13.0-rockylinux - rockylinux/rockylinux:8.4
 * **v2.12.0**
