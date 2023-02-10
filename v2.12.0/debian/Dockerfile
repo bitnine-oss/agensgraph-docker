@@ -70,9 +70,9 @@ RUN set -eux; \
 
 RUN mkdir /docker-entrypoint-initdb.d
 
-ENV PG_MAJOR 12
-ENV AG_VERSION v2.12.0
-ENV AG_SHA256 5160ea3305b988584506d33b841490cb8677ed3fc093acf47ad87decc8999851
+ENV PG_MAJOR 13
+ENV AG_VERSION v2.13.1
+ENV AG_SHA256 4788e97fb056b36967bf6d732e8cc344f7f26fa5438830e3ddaf45ad7b1e13b1
 
 RUN set -eux; \
 	apt-get update; \
@@ -89,7 +89,7 @@ RUN set -eux; \
 	; \
 	rm postgresql.tar.gz; \
 	\
-    build_deps='build-essential libreadline-dev zlib1g-dev flex bison libxml2-dev libxslt1-dev libssl-dev libxml2-utils xsltproc pkg-config uuid-dev';\
+    build_deps='build-essential libreadline-dev zlib1g-dev flex bison libxml2-dev libxslt1-dev libssl-dev libxml2-utils xsltproc pkg-config uuid-dev docbook-xsl';\
 #    tcl8.6-dev
     apt-get install -y $build_deps pax-utils; \
     cd /usr/src/postgresql; \
@@ -164,7 +164,7 @@ RUN mkdir -p "$PGDATA" && chown -R postgres:postgres "$PGDATA" && chmod 777 "$PG
 VOLUME /var/lib/postgresql/data
 
 COPY docker-entrypoint.sh /usr/local/bin/
-ENTRYPOINT ["docker-entrypoint.sh"]
+ENTRYPOINT ["/bin/bash", "docker-entrypoint.sh"]
 
 # We set the default STOPSIGNAL to SIGINT, which corresponds to what PostgreSQL
 # calls "Fast Shutdown mode" wherein new connections are disallowed and any
