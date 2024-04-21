@@ -55,7 +55,7 @@ The image already has a graph("agens_graph"), and you can see the list of graphs
 
 ```shell
 $ docker exec -it {NAME OR CONTAINER_ID} /bin/bash
-bash-5.1# psql -u postgres
+bash-5.1# psql -U postgres
 psql (10.4)
 Type "help" for help.
 
